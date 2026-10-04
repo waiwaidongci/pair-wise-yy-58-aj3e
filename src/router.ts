@@ -5,6 +5,7 @@ export default createRouter({
   routes: [
     { path: '/', component: { template: '<div />' } },
     { path: '/models', component: { template: '<div />' } },
+    { path: '/datum', component: { template: '<div />' } },
     { path: '/checks', component: { template: '<div />' } },
     { path: '/review', component: { template: '<div />' } }
   ]
