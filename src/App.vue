@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as THREE from 'three';
 import { useLiftStore } from './store';
+import DatumPanel from './DatumPanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -21,11 +22,15 @@ let previousX = 0;
 const nav = [
   { path: '/', label: '三维复核', icon: 'view_in_ar' },
   { path: '/models', label: '模型与参数', icon: 'tune' },
+  { path: '/datum', label: '基准与换算', icon: 'transform' },
   { path: '/checks', label: '冲突与评论', icon: 'rule' },
   { path: '/review', label: '多角色会签', icon: 'fact_check' }
 ];
 
 const pageTitle = computed(() => nav.find((item) => item.path === route.path)?.label ?? '吊装工作台');
+
+const activeConclusion = computed(() => store.activeConclusionForStep(store.selectedStepId));
+const activeConclusionDatum = computed(() => (activeConclusion.value ? store.datumById(activeConclusion.value.datumVersionId) : undefined));
 
 function go(path: string) {
   router.push(path);
@@ -278,6 +283,16 @@ onBeforeUnmount(() => {
               <div><span>作业半径</span><strong>{{ store.selectedStep.radius }}m</strong></div>
               <div><span>风速限制</span><strong>{{ store.selectedStep.wind }}m/s</strong></div>
             </div>
+            <div class="datum-chip-row">
+              <q-icon name="transform" size="14px" />
+              <template v-if="activeConclusion">
+                <span>净空结论基准：<b>{{ activeConclusionDatum?.name }} {{ activeConclusionDatum?.version }}</b></span>
+                <q-badge v-if="activeConclusion.status === 'review'" color="amber" text-color="dark">待复核</q-badge>
+                <q-badge v-else-if="activeConclusion.status === 'published'" color="teal">已发布</q-badge>
+                <q-badge v-else-if="activeConclusion.status === 'draft'" color="grey">草稿</q-badge>
+              </template>
+              <span v-else>该步骤暂无净空结论</span>
+            </div>
             <label class="field-label">荷载率</label>
             <q-slider v-model="store.selectedStep.loadRate" :min="0" :max="120" color="primary" />
             <div class="form-row">
@@ -300,6 +315,8 @@ onBeforeUnmount(() => {
             <q-btn class="save-step" color="primary" no-caps icon="save" label="保存步骤修改" @click="store.updateStep({})" />
           </aside>
         </section>
+
+        <DatumPanel v-if="route.path === '/datum'" />
 
         <section v-if="route.path === '/checks'" class="content-panel full-panel">
           <div class="panel-heading">
